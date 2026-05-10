@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>การ์ดถึงดื้อ ♡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Playfair+Display:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rose:#c97b6e;--rose-light:#e8b8a0;
+  --cream:#fdf6f0;--brown-dark:#3d2b22;
+  --brown-mid:#8a6a5a;--border:#e8d5c8;
+  --bg-highlight:#fdf0ea;
+}
+body{
+  background:var(--cream);min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Sarabun',sans-serif;overflow-x:hidden;
+}
+
+/* ════ INTRO OVERLAY ════ */
+#intro{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(253,246,240,0.97);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;animation:fadeIn 1s ease forwards;
+  transition:opacity .6s;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.vinyl-wrap{position:relative;width:110px;height:110px;margin-bottom:26px}
+.vinyl-disc{
+  width:110px;height:110px;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%,#fdf0ea 0 18%,transparent 18%),
+    conic-gradient(#d9a090 0 45deg,#c97b6e 45deg 90deg,#e8c0b0 90deg 135deg,
+      #c97b6e 135deg 180deg,#d9a090 180deg 225deg,#c97b6e 225deg 270deg,
+      #e8c0b0 270deg 315deg,#c97b6e 315deg 360deg);
+  box-shadow:0 8px 32px rgba(180,100,80,.2);
+  animation:spin 4s linear infinite;animation-play-state:paused;
+}
+.vinyl-disc.go{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vinyl-dot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.vinyl-dot::after{content:'';width:14px;height:14px;border-radius:50%;background:#fdf0ea;display:block}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(201,123,110,.28);animation:ringOut 2.4s ease-out infinite}
+.ring:nth-child(2){animation-delay:.8s}.ring:nth-child(3){animation-delay:1.6s}
+@keyframes ringOut{0%{transform:scale(.85);opacity:.5}100%{transform:scale(1.5);opacity:0}}
+
+.intro-title{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:26px;color:var(--brown-dark);letter-spacing:.03em;margin-bottom:4px;
+}
+.intro-sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--brown-mid);margin-bottom:30px}
+
+.play-btn{
+  width:220px;
+  background:linear-gradient(135deg,var(--rose),#d99080);
+  border:none;border-radius:50px;
+  padding:13px 0;
+  color:#fff;font-family:'Sarabun',sans-serif;
+  font-size:14px;letter-spacing:.1em;cursor:pointer;
+  box-shadow:0 4px 24px rgba(201,123,110,.4);
+  transition:transform .2s,box-shadow .2s,opacity .2s;
+  position:relative;overflow:hidden;
+}
+.play-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);
+  transform:translateX(-100%);transition:transform .45s;
+}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(201,123,110,.5)}
+.play-btn:hover::before{transform:translateX(100%)}
+.play-btn:disabled{opacity:.4;cursor:default;transform:none}
+
+.skip-btn{
+  background:none;border:none;cursor:pointer;
+  font-family:'Sarabun',sans-serif;font-size:11px;
+  color:#c4a090;text-decoration:underline;
+  margin-top:12px;transition:color .2s;
+}
+.skip-btn:hover{color:var(--brown-mid)}
+
+/* ════ MINI PLAYER — Spotify style ════ */
+#miniPlayer{
+  position:fixed;
+  bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(120px);
+  z-index:90;
+  width:calc(100% - 32px);
+  max-width:480px;
+  background:rgba(61,43,34,0.88);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:.5px solid rgba(232,184,160,.18);
+  border-radius:16px;
+  padding:10px 14px;
+  box-shadow:0 8px 32px rgba(60,30,20,.25);
+  transition:transform .5s cubic-bezier(.34,1.2,.64,1), opacity .4s;
+  opacity:0;
+  cursor:default;
+}
+#miniPlayer.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+
+.mp-row{display:flex;align-items:center;gap:10px}
+.mp-vinyl{
+  width:42px;height:42px;flex-shrink:0;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%,#3d2b22 0 28%,transparent 28%),
+    conic-gradient(#d9a090 0 90deg,#c97b6e 90deg 180deg,#e8b8a0 180deg 270deg,#c97b6e 270deg 360deg);
+  animation:spin 3s linear infinite;animation-play-state:paused;
+  box-shadow:0 2px 10px rgba(0,0,0,.3);
+}
+#miniPlayer.playing .mp-vinyl{animation-play-state:running}
+
+.mp-info{flex:1;min-width:0}
+.mp-title{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-artist{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
+
+.mp-controls{display:flex;align-items:center;gap:4px}
+.mp-btn{
+  background:none;border:none;cursor:pointer;
+  color:rgba(255,255,255,.6);padding:6px;border-radius:50%;
+  transition:color .2s,background .2s;display:flex;align-items:center;justify-content:center;
+}
+.mp-btn:hover{color:#fff;background:rgba(255,255,255,.08)}
+.mp-btn-play{
+  width:36px;height:36px;
+  background:#fff;border-radius:50%;color:var(--brown-dark);
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  transition:transform .15s,box-shadow .2s;
+}
+.mp-btn-play:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.3);color:var(--brown-dark)}
+
+/* progress bar */
+.mp-progress{margin-top:8px}
+.mp-bar-track{
+  height:2px;background:rgba(255,255,255,.15);border-radius:2px;cursor:pointer;
+  position:relative;
+}
+.mp-bar-fill{height:100%;background:var(--rose-light);border-radius:2px;width:0;transition:width .3s linear}
+.mp-time-row{display:flex;justify-content:space-between;margin-top:4px}
+.mp-time{font-size:9px;color:rgba(255,255,255,.3)}
+
+/* equalizer bars */
+.mp-bars{display:flex;align-items:flex-end;gap:2px;height:16px;margin-left:4px}
+.mp-bars span{width:2px;border-radius:2px;background:var(--rose-light);animation:bar .8s ease-in-out infinite alternate}
+.mp-bars span:nth-child(1){height:5px;animation-delay:0s}
+.mp-bars span:nth-child(2){height:12px;animation-delay:.15s}
+.mp-bars span:nth-child(3){height:7px;animation-delay:.3s}
+.mp-bars span:nth-child(4){height:14px;animation-delay:.1s}
+.mp-bars span:nth-child(5){height:5px;animation-delay:.25s}
+@keyframes bar{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
+#miniPlayer:not(.playing) .mp-bars span{animation-play-state:paused}
+
+/* ════ LYRICS ════ */
+#lyrics{
+  position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
+  z-index:90;text-align:center;pointer-events:none;
+  width:92%;max-width:520px;
+  opacity:0;transition:opacity .5s;
+}
+#lyrics.show{opacity:1}
+.l-glow{
+  position:absolute;inset:-16px -24px;
+  background:radial-gradient(ellipse at center,rgba(253,246,240,.9) 0%,transparent 72%);
+  z-index:-1;
+}
+.l-side{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13.5px;
+  color:rgba(138,106,90,.3);min-height:22px;line-height:1.6;
+  transition:opacity .5s;
+}
+.l-main{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:21px;font-weight:400;letter-spacing:.015em;
+  color:var(--brown-dark);line-height:1.55;min-height:32px;
+  text-shadow:0 2px 18px rgba(253,246,240,1),0 0 32px rgba(253,246,240,.9);
+  transition:opacity .4s,transform .4s;margin:3px 0;
+}
+
+/* ════ PETALS ════ */
+.petals-bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.petal{position:absolute;opacity:.16;animation:floatUp linear infinite}
+@keyframes floatUp{
+  0%{transform:translateY(110%) rotate(0deg);opacity:.16}
+  100%{transform:translateY(-110%) rotate(360deg);opacity:0}
+}
+
+/* ════ CARD ════ */
+.card-world{
+  min-height:520px;width:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 16px 160px;position:relative;overflow:hidden;
+}
+.card-envelope{width:100%;max-width:440px;position:relative;z-index:1}
+.card-body{
+  background:#fff;border:.5px solid var(--border);border-radius:20px;
+  min-height:340px;padding:32px 28px 24px;position:relative;overflow:hidden;
+  box-shadow:0 4px 32px rgba(180,120,100,.08);
+}
+.page{display:none;animation:fadeSlide .4s ease}
+.page.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.page-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#b89a8a;margin-bottom:10px}
+.cover-title{font-family:'Playfair Display',serif;font-size:28px;font-style:italic;color:var(--brown-dark);line-height:1.3;margin-bottom:6px}
+.cover-sub{font-size:14px;color:var(--brown-mid);margin-top:6px}
+.heart-deco{font-size:32px;margin-bottom:12px;display:block;animation:hb 1.8s ease-in-out infinite;color:var(--rose)}
+@keyframes hb{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.body-text{font-size:15px;line-height:1.85;color:var(--brown-dark);font-weight:300}
+.body-text b{font-weight:600}
+.hl{background:var(--bg-highlight);border-left:3px solid var(--rose-light);border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;font-size:14px;color:#7a5040;font-style:italic;line-height:1.7}
+.closing{font-family:'Playfair Display',serif;font-style:italic;font-size:18px;color:var(--brown-dark);margin-top:14px;text-align:center}
+.sign{font-size:13px;color:var(--brown-mid);text-align:center;margin-top:4px}
+.divider{border:none;border-top:.5px solid var(--border);margin:14px 0}
+.cdeco{position:absolute;font-size:14px;opacity:.15;color:var(--rose)}
+.cdeco.tl{top:12px;left:14px}.cdeco.tr{top:12px;right:14px}
+.cdeco.bl{bottom:12px;left:14px}.cdeco.br{bottom:12px;right:14px}
+
+/* ════ NAV BUTTONS ════ */
+.nav-row{display:flex;align-items:center;justify-content:space-between;margin-top:20px;gap:8px}
+.nav-btn{
+  position:relative;overflow:hidden;
+  background:linear-gradient(145deg,#fff 0%,#fdf0ea 100%);
+  border:none;border-radius:50px;padding:0;cursor:pointer;
+  box-shadow:0 2px 8px rgba(201,123,110,.12),inset 0 .5px 0 rgba(255,255,255,.9);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;outline:none;
+}
+.nav-btn:disabled{opacity:.28;cursor:default;pointer-events:none}
+.nav-btn:not(:disabled):hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 24px rgba(201,123,110,.28)}
+.nav-btn:not(:disabled):active{transform:translateY(-1px) scale(1.02)}
+.nav-inner{display:flex;align-items:center;gap:6px;padding:10px 20px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--brown-mid);transition:color .25s;position:relative;z-index:1}
+.nav-btn:not(:disabled):hover .nav-inner{color:var(--brown-dark)}
+.nav-inner svg{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+#prevBtn:not(:disabled):hover svg{transform:translateX(-4px)}
+#nextBtn:not(:disabled):hover svg{transform:translateX(4px)}
+.nav-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-100%);transition:transform .45s}
+.nav-btn:not(:disabled):hover::before{transform:translateX(100%)}
+.nav-btn::after{content:'';position:absolute;inset:-2px;border-radius:50px;background:linear-gradient(135deg,var(--rose-light),var(--rose));opacity:0;z-index:-1;transition:opacity .25s}
+.nav-btn:not(:disabled):hover::after{opacity:.28}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .3s;cursor:pointer}
+.dot.active{background:var(--rose);transform:scale(1.2);box-shadow:0 0 6px rgba(201,123,110,.4)}
+</style>
+</head>
+<body>
+
+<!-- HIDDEN AUDIO -->
+<audio id="audio" src="Drip_sauce___https___music_apple_com_us_album-dennis-simpson-single_1491390530.mp3" preload="auto"></audio>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="vinyl-wrap">
+    <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+    <div class="vinyl-disc" id="iVinyl"></div>
+    <div class="vinyl-dot"></div>
+  </div>
+  <div class="intro-title" style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:var(--brown-dark);margin-bottom:2px">Over &amp; Over</div>
+  <div class="intro-sub">Adrian Milanio</div>
+
+  <button class="play-btn" id="playBtn" onclick="startMusic()">
+    ▶ &nbsp; เริ่มเล่นเพลง
+  </button>
+  <button class="skip-btn" onclick="skipMusic()">ข้ามเพลง อ่านการ์ดเลย →</button>
+</div>
+
+<!-- MINI PLAYER -->
+<div id="miniPlayer">
+  <div class="mp-row">
+    <div class="mp-vinyl"></div>
+    <div class="mp-info">
+      <div class="mp-title">Over &amp; Over</div>
+      <div class="mp-artist">Adrian Milanio</div>
+    </div>
+    <div class="mp-bars"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="mp-controls">
+      <!-- rewind 10s -->
+      <button class="mp-btn" onclick="seekRel(-10)" title="ย้อน 10 วิ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+          <text x="9" y="15" font-size="5" fill="currentColor">10</text>
+        </svg>
+      </button>
+      <!-- play/pause -->
+      <button class="mp-btn mp-btn-play" id="mpPlayBtn" onclick="togglePlay()">
+        <svg id="mpIconPlay" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg id="mpIconPause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        </svg>
+      </button>
+      <!-- forward 10s -->
+      <button class="mp-btn" onclick="seekRel(10)" title="ข้าม 10 วิ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+          <text x="8" y="15" font-size="5" fill="currentColor">10</text>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <!-- progress -->
+  <div class="mp-progress">
+    <div class="mp-bar-track" id="mpTrack">
+      <div class="mp-bar-fill" id="mpFill"></div>
+    </div>
+    <div class="mp-time-row">
+      <span class="mp-time" id="mpCur">0:00</span>
+      <span class="mp-time" id="mpDur">0:00</span>
+    </div>
+  </div>
+</div>
+
+<!-- LYRICS -->
+<div id="lyrics">
+  <div class="l-glow"></div>
+  <div class="l-side" id="lPrev"></div>
+  <div class="l-main" id="lMain"></div>
+  <div class="l-side" id="lNext"></div>
+</div>
+
+<!-- CARD -->
+<div class="card-world">
+  <div class="petals-bg" id="petalsContainer"></div>
+  <div class="card-envelope">
+    <div class="card-body">
+      <div class="cdeco tl">✦</div><div class="cdeco tr">✦</div>
+      <div class="cdeco bl">✦</div><div class="cdeco br">✦</div>
+
+      <div class="page active" id="page-0">
+        <div style="text-align:center;padding:28px 0 20px">
+          <span class="heart-deco">♡</span>
+          <div class="page-label">ถึงคนที่รักที่สุด</div>
+          <div class="cover-title">ถึงดื้อ</div>
+          <div class="cover-sub">การ์ดนี้มีไว้ให้เธอคนเดียว<br>เปิดไปเรื่อยๆเลยนะ</div>
+        </div>
+      </div>
+
+      <div class="page" id="page-1">
+        <div class="page-label">หน้า 1 — ขอบคุณ</div>
+        <div class="body-text">
+          ขอบคุณนะดื้อ สำหรับการ์ดที่เขียนมาให้<br><br>
+          มันเป็นสิ่งเล็กๆ แต่ <b>มันหมายความว่าทุกอย่าง</b> สำหรับเค้าเลย<br><br>
+          รู้ไหมว่าทุกครั้งที่ได้มีดื้ออยู่ด้วย มันทำให้ทุกวันดีขึ้นได้อีกเยอะมากๆ<br>
+          แค่รู้ว่าดื้ออยู่ตรงนั้น ก็รู้สึกอบอุ่นแล้ว
+        </div>
+        <div class="hl">" มีดื้ออยู่ด้วย มันดีกว่าไม่มีดื้อมากๆเลย "</div>
+      </div>
+
+      <div class="page" id="page-2">
+        <div class="page-label">หน้า 2 — ผ่านมาด้วยกัน</div>
+        <div class="body-text">
+          เราทั้งคู่อาจจะผ่านเรื่องแย่ๆมาด้วยกันเยอะ<br>
+          บางทีก็เจ็บ บางทีก็เหนื่อย บางทีก็ไม่รู้จะเดินต่อยังไง<br><br>
+          แต่สิ่งที่น่าแปลกใจที่สุดคือ... <b>เราก็ยังอยู่ตรงนี้ด้วยกัน</b><br><br>
+          ไม่ว่าจะหนักแค่ไหน เราก็ไม่สามารถห่างจากกันได้เลย
+        </div>
+      </div>
+
+      <div class="page" id="page-3">
+        <div class="page-label">หน้า 3 — ไม่คาดคิด</div>
+        <div class="body-text">
+          แรกๆเค้าก็ไม่คิดว่าเราจะมากันได้ขนาดนี้นะ<br><br>
+          จริงๆ ตอนแรกก็แค่ไม่รู้ว่าจะเป็นยังไงต่อ<br>
+          แต่พอทุกครั้งที่เราต้องออกห่างกัน...<br><br>
+          เค้าก็รู้สึกเลยว่า<b> ขาดดื้อไม่ได้</b><br>
+          เหมือนข้าวที่ขาดแล้วจะกินไม่ลงเลย
+        </div>
+        <div class="hl">" ดื้อเป็นเหมือนส่วนหนึ่งในชีวิตของเค้าไปแล้ว<br>ถอดออกไม่ได้จริงๆ "</div>
+      </div>
+
+      <div class="page" id="page-4">
+        <div class="page-label">หน้า 4 — จากใจ</div>
+        <div class="body-text" style="text-align:center">
+          เค้าขอบคุณดื้อนะ<br>
+          ที่ยังอยู่ตรงนี้ ที่ยังเลือกเค้า<br>
+          ที่ยอมอยู่ข้างๆกันมาตลอด<br><br>
+          แม้เราจะยังมีเรื่องไม่สมบูรณ์แบบอีกเยอะ<br>
+          แต่มีดื้ออยู่ด้วย เค้าก็พร้อมเดินต่อไปเสมอ
+        </div>
+        <hr class="divider">
+        <div class="closing">รักดื้อนะ ♡</div>
+        <div class="sign" style="margin-top:10px">จากคนที่ขาดดื้อไม่ได้ตลอดกาล</div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" onclick="changePage(-1)" disabled>
+        <div class="nav-inner">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <defs><linearGradient id="gL" x1="14" y1="0" x2="2" y2="16" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c97b6e"/><stop offset="100%" stop-color="#e8a090"/>
+            </linearGradient></defs>
+            <path d="M10 3L5 8L10 13" stroke="url(#gL)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="5" cy="8" r="2.5" fill="url(#gL)" opacity="0.2"/>
+          </svg>
+          <span>ก่อนหน้า</span>
+        </div>
+      </button>
+      <div class="dots" id="dotsC"></div>
+      <button class="nav-btn" id="nextBtn" onclick="changePage(1)">
+        <div class="nav-inner">
+          <span>ถัดไป</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <defs><linearGradient id="gR" x1="2" y1="0" x2="14" y2="16" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c97b6e"/><stop offset="100%" stop-color="#e8a090"/>
+            </linearGradient></defs>
+            <path d="M6 3L11 8L6 13" stroke="url(#gR)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="11" cy="8" r="2.5" fill="url(#gR)" opacity="0.2"/>
+          </svg>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── PETALS ── */
+const pc=document.getElementById('petalsContainer');
+['♡','✿','✦','◇','❀'].forEach((e,i)=>{
+  for(let j=0;j<4;j++){
+    const el=document.createElement('div');
+    el.className='petal';
+    el.textContent=e;
+    el.style.cssText=`left:${Math.random()*100}%;font-size:${12+Math.random()*16}px;animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*12}s`;
+    pc.appendChild(el);
+  }
+});
+
+/* ── DOTS ── */
+const TOTAL=5; let cur=0;
+const dotsC=document.getElementById('dotsC');
+for(let i=0;i<TOTAL;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i);
+  dotsC.appendChild(d);
+}
+function goTo(n){
+  document.getElementById('page-'+cur).classList.remove('active');
+  dotsC.children[cur].classList.remove('active');
+  cur=n;
+  document.getElementById('page-'+cur).classList.add('active');
+  dotsC.children[cur].classList.add('active');
+  document.getElementById('prevBtn').disabled=cur===0;
+  document.getElementById('nextBtn').disabled=cur===TOTAL-1;
+}
+function changePage(d){const n=cur+d;if(n>=0&&n<TOTAL)goTo(n);}
+
+/* ── AUDIO ── */
+const audio=document.getElementById('audio');
+const miniPlayer=document.getElementById('miniPlayer');
+const mpFill=document.getElementById('mpFill');
+const mpTrack=document.getElementById('mpTrack');
+const mpCur=document.getElementById('mpCur');
+const mpDur=document.getElementById('mpDur');
+const mpIconPlay=document.getElementById('mpIconPlay');
+const mpIconPause=document.getElementById('mpIconPause');
+
+function fmt(s){
+  if(isNaN(s))return'0:00';
+  const m=Math.floor(s/60);
+  const sec=Math.floor(s%60).toString().padStart(2,'0');
+  return`${m}:${sec}`;
+}
+
+function startMusic(){
+  document.getElementById('iVinyl').classList.add('go');
+  document.getElementById('playBtn').disabled=true;
+  document.getElementById('playBtn').textContent='⏳  กำลังโหลด...';
+  audio.volume=0.8;
+  audio.play().then(()=>{
+    dismissIntro();
+    setPlaying(true);
+  }).catch(()=>{
+    // autoplay blocked — still dismiss and show player
+    dismissIntro();
+    setPlaying(false);
+  });
+}
+
+function dismissIntro(){
+  const intro=document.getElementById('intro');
+  intro.style.opacity='0';
+  setTimeout(()=>intro.style.display='none',600);
+  miniPlayer.classList.add('show');
+  document.getElementById('lyrics').classList.add('show');
+}
+
+function setPlaying(playing){
+  if(playing){
+    miniPlayer.classList.add('playing');
+    mpIconPlay.style.display='none';
+    mpIconPause.style.display='';
+  }else{
+    miniPlayer.classList.remove('playing');
+    mpIconPlay.style.display='';
+    mpIconPause.style.display='none';
+  }
+}
+
+function togglePlay(){
+  if(audio.paused){audio.play();setPlaying(true);}
+  else{audio.pause();setPlaying(false);}
+}
+
+function seekRel(s){
+  audio.currentTime=Math.max(0,Math.min(audio.duration||0,audio.currentTime+s));
+}
+
+audio.addEventListener('timeupdate',()=>{
+  if(audio.duration){
+    mpFill.style.width=(audio.currentTime/audio.duration*100)+'%';
+    mpCur.textContent=fmt(audio.currentTime);
+  }
+});
+audio.addEventListener('loadedmetadata',()=>{mpDur.textContent=fmt(audio.duration);});
+audio.addEventListener('ended',()=>{audio.currentTime=0;audio.play();});
+
+mpTrack.addEventListener('click',(e)=>{
+  const r=mpTrack.getBoundingClientRect();
+  audio.currentTime=((e.clientX-r.left)/r.width)*(audio.duration||0);
+});
+
+function skipMusic(){
+  const intro=document.getElementById('intro');
+  intro.style.opacity='0';
+  setTimeout(()=>intro.style.display='none',400);
+}
+
+/* ── LYRICS ── */
+const lyrics=[
+  {t:0,   txt:''},
+  {t:3,   txt:'ฉันรู้ว่ามีเหตุผลที่ควรปล่อยให้ผ่านไป'},
+  {t:7,   txt:'แต่ฉันก็ยังเลือกที่จะอยู่ตรงนี้'},
+  {t:11,  txt:'ฉันรู้ว่าเราต่างกัน แต่ฉันก็รักเธออยู่ดี'},
+  {t:15,  txt:'อย่าปล่อยให้ฉันจม... อยู่ข้างๆกันนะ'},
+  {t:19,  txt:'Hold me down'},
+  {t:22,  txt:'อยู่ดูแลฉัน ในทุกครั้งที่ฉันล้ม'},
+  {t:26,  txt:'Hold me down'},
+  {t:29,  txt:'อย่าให้ฉันล่องลอยไปคนเดียว'},
+  {t:33,  txt:'ฉันอาจจะพูดสิ่งที่ไม่ควรพูด'},
+  {t:37,  txt:'แต่ใจฉันยังอยู่ตรงนี้เสมอ'},
+  {t:41,  txt:'บางทีก็ไม่รู้ว่าจะเดินต่อยังไง'},
+  {t:45,  txt:'แต่รู้แค่ว่า... ฉันอยากมีเธออยู่ข้างๆ'},
+  {t:49,  txt:'Hold me down'},
+  {t:52,  txt:'ตรงนี้ปลอดภัยเสมอ ถ้าเธออยู่ด้วย'},
+  {t:56,  txt:'Hold me down'},
+  {t:59,  txt:'เธอคือสิ่งที่ทำให้ฉันหยุดตกลงไป'},
+  {t:63,  txt:'ฉันไม่ได้ขอให้เธอเข้าใจทุกอย่าง'},
+  {t:67,  txt:'แค่อยู่ตรงนี้ — แค่นั้นพอ'},
+  {t:71,  txt:'เพราะฉันมีเธอ...'},
+  {t:75,  txt:'ฉันถึงยังเดินต่อไปได้'},
+  {t:79,  txt:'Hold me down  ♡'},
+  {t:83,  txt:''},
+];
+let lastIdx=-1;
+const lMain=document.getElementById('lMain'),lPrev=document.getElementById('lPrev'),lNext=document.getElementById('lNext');
+function setLyric(t){
+  let idx=0;
+  for(let i=lyrics.length-1;i>=0;i--){if(t>=lyrics[i].t){idx=i;break;}}
+  if(idx===lastIdx)return; lastIdx=idx;
+  lMain.style.opacity='0'; lMain.style.transform='translateY(-8px)';
+  lPrev.style.opacity='0'; lNext.style.opacity='0';
+  setTimeout(()=>{
+    lPrev.textContent=idx>0?lyrics[idx-1].txt:'';
+    lMain.textContent=lyrics[idx].txt;
+    lNext.textContent=idx<lyrics.length-1?lyrics[idx+1].txt:'';
+    lMain.style.transform='translateY(10px)';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      lMain.style.opacity='1'; lMain.style.transform='translateY(0)';
+      const s=!!lyrics[idx].txt;
+      lPrev.style.opacity=s?'1':'0'; lNext.style.opacity=s?'1':'0';
+    }));
+  },250);
+}
+audio.addEventListener('timeupdate',()=>setLyric(audio.currentTime));
+</script>
+</body>
+</html>
